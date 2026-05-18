@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Anime Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a1428 0%, #1e2a4d 100%);
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .progress-bar {
+      height: 6px;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      border-radius: 9999px;
+    }
+    .card {
+      transition: all 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-7xl mx-auto p-3 md:p-6">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold flex items-center gap-2 text-white">
+        🌌 Anime Tracker
+      </h1>
+      <button onclick="exportPDF()" 
+              class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl flex items-center gap-2 text-sm font-medium shadow-lg">
+        <i class="fas fa-file-pdf"></i> Export PDF
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats" class="grid grid-cols-2 gap-3 mb-6"></div>
+
+    <!-- Controls -->
+    <div class="flex gap-3 mb-5">
+      <button onclick="showAddModal()" 
+              class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-5 py-3 rounded-2xl font-medium flex items-center gap-2 text-sm flex-shrink-0 shadow-lg">
+        <i class="fas fa-plus"></i> Add Anime
+      </button>
+
+      <input type="text" id="searchInput" placeholder="Search anime..." 
+             class="flex-1 glass rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 text-white"
+             onkeyup="filterTable()">
+
+      <select id="statusFilter" onchange="filterTable()" 
+              class="glass rounded-2xl px-4 py-3 text-sm text-white">
+        <option value="">All</option>
+        <option value="Watching">Watching</option>
+        <option value="Completed">Completed</option>
+        <option value="Dropped">Dropped</option>
+        <option value="Plan to Watch">Plan</option>
+      </select>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div id="mobileView" class="space-y-3 md:hidden"></div>
+
+    <!-- Desktop Table -->
+    <div class="hidden md:block glass rounded-3xl overflow-hidden border border-blue-500/20">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-blue-500/20 text-left text-sm text-blue-300">
+            <th class="p-4">Anime</th>
+            <th class="p-4">Season</th>
+            <th class="p-4">Progress</th>
+            <th class="p-4">Rating</th>
+            <th class="p-4">Status</th>
+            <th class="p-4 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="animeList" class="divide-y divide-blue-500/20 text-sm"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3">
+    <div class="glass w-full max-w-md rounded-3xl p-5 border border-blue-400/30">
+      <h2 id="modalTitle" class="text-xl font-bold mb-5 text-white">Add Anime</h2>
+      <input type="hidden" id="editId">
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs mb-1 text-blue-300">Anime Name</label>
+          <input id="animeName" list="animeSuggestions" type="text" 
+                 class="w-full glass rounded-2xl px-4 py-3 text-sm text-white" placeholder="e.g. Solo Leveling">
+          <datalist id="animeSuggestions"></datalist>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs mb-1 text-blue-300">Season</label>
+            <input id="season" type="text" class="w-full glass rounded-2xl px-4 py-3 text-sm text-white" placeholder="Season 1">
+          </div>
+          <div>
+            <label class="block text-xs mb-1 text-blue-300">Rating (0-10)</label>
+            <input id="rating" type="number" min="0" max="10" step="0.1" value="0" 
+                   class="w-full glass rounded-2xl px-4 py-3 text-sm text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs mb-1 text-blue-300">Episodes Watched</label>
+            <input id="epWatched" type="number" min="0" value="0" 
+                   class="w-full glass rounded-2xl px-4 py-3 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs mb-1 text-blue-300">Total Eps</label>
+            <input id="totalEps" type="number" min="0" 
+                   class="w-full glass rounded-2xl px-4 py-3 text-sm text-white" placeholder="24">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs mb-1 text-blue-300">Status</label>
+          <select id="status" class="w-full glass rounded-2xl px-4 py-3 text-sm text-white">
+            <option value="Watching">Watching</option>
+            <option value="Completed">Completed</option>
+            <option value="Dropped">Dropped</option>
+            <option value="Plan to Watch">Plan to Watch</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs mb-1 text-blue-300">Notes</label>
+          <textarea id="notes" class="w-full glass rounded-2xl px-4 py-3 h-20 text-sm text-white" placeholder="Your thoughts..."></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-2xl text-sm">Cancel</button>
+        <button onclick="saveAnime()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl text-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="detailsModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3">
+    <div class="glass w-full max-w-sm rounded-3xl p-5 border border-blue-400/30">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-lg font-bold text-white" id="detailTitle">Anime Details</h2>
+        <button onclick="closeDetailsModal()" class="text-3xl text-gray-400 hover:text-white">×</button>
+      </div>
+
+      <div class="space-y-5 text-sm">
+        <div>
+          <p class="text-xs text-blue-300">ANIME NAME</p>
+          <p class="text-base font-bold text-white" id="detailName"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-blue-300">SEASON</p>
+            <p id="detailSeason" class="font-medium text-white"></p>
+          </div>
+          <div>
+            <p class="text-xs text-blue-300">STATUS</p>
+            <span id="detailStatus" class="inline-block px-3 py-1 rounded-full text-xs"></span>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs text-blue-300">PROGRESS</p>
+          <p id="detailProgress" class="font-medium text-white"></p>
+          <div class="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+            <div id="detailProgressBar" class="progress-bar"></div>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs text-blue-300">RATING</p>
+          <p id="detailRating" class="text-lg font-bold text-white"></p>
+        </div>
+
+        <div>
+          <p class="text-xs text-blue-300">NOTES</p>
+          <p id="detailNotes" class="text-gray-200 text-sm whitespace-pre-wrap min-h-[60px]"></p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeDetailsModal()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-2xl text-sm">Close</button>
+        <button onclick="editFromDetails()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl text-sm">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // (Same JavaScript logic as previous version)
+    let animeList = [];
+    let currentDetailId = null;
+
+    function loadData() {
+      const data = localStorage.getItem('myAnimeList');
+      animeList = data ? JSON.parse(data) : [];
+      renderAll();
+      updateStats();
+    }
+
+    function saveData() {
+      localStorage.setItem('myAnimeList', JSON.stringify(animeList));
+    }
+
+    function updateSuggestions() {
+      const datalist = document.getElementById('animeSuggestions');
+      datalist.innerHTML = '';
+      [...new Set(animeList.map(a => a.animeName))].sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        datalist.appendChild(opt);
+      });
+    }
+
+    function updateStats() {
+      const total = animeList.length;
+      const completed = animeList.filter(a => a.status === 'Completed').length;
+      const watching = animeList.filter(a => a.status === 'Watching').length;
+      const plan = animeList.filter(a => a.status === 'Plan to Watch').length;
+
+      document.getElementById('stats').innerHTML = `
+        <div class="glass rounded-2xl p-3 text-center border border-blue-400/20">
+          <p class="text-xs text-blue-300">Total</p>
+          <p class="text-2xl font-bold text-white">${total}</p>
+        </div>
+        <div class="glass rounded-2xl p-3 text-center border border-blue-400/20">
+          <p class="text-xs text-blue-300">Completed</p>
+          <p class="text-2xl font-bold text-emerald-400">${completed}</p>
+        </div>
+        <div class="glass rounded-2xl p-3 text-center border border-blue-400/20">
+          <p class="text-xs text-blue-300">Watching</p>
+          <p class="text-2xl font-bold text-blue-400">${watching}</p>
+        </div>
+        <div class="glass rounded-2xl p-3 text-center border border-blue-400/20">
+          <p class="text-xs text-blue-300">Plan</p>
+          <p class="text-2xl font-bold text-amber-400">${plan}</p>
+        </div>
+      `;
+    }
+
+    function getStatusClass(status) {
+      if (status === 'Completed') return 'bg-emerald-500/20 text-emerald-400';
+      if (status === 'Watching') return 'bg-blue-500/20 text-blue-400';
+      if (status === 'Dropped') return 'bg-red-500/20 text-red-400';
+      return 'bg-amber-500/20 text-amber-400';
+    }
+
+    // Rest of the functions (renderAll, showDetails, saveAnime, etc.) are the same as the previous compact version
+    function renderAll(filtered = animeList) {
+      renderMobileCards(filtered);
+      renderDesktopTable(filtered);
+    }
+
+    function renderMobileCards(filtered) {
+      const container = document.getElementById('mobileView');
+      container.innerHTML = '';
+
+      filtered.forEach(anime => {
+        const progress = anime.totalEpisodes ? `${anime.episodesWatched}/${anime.totalEpisodes}` : anime.episodesWatched;
+        container.innerHTML += `
+          <div class="card glass rounded-2xl p-4 border border-blue-400/30" onclick="showDetails('${anime.id}')">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-semibold text-white">${anime.animeName}</p>
+                <p class="text-xs text-blue-300">${anime.season || '-'}</p>
+              </div>
+              <span class="text-xs px-3 py-1 rounded-full ${getStatusClass(anime.status)}">${anime.status}</span>
+            </div>
+            <div class="flex justify-between mt-3 text-sm text-white">
+              <div>📊 ${progress}</div>
+              <div>${anime.rating ? `⭐ ${anime.rating}` : ''}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-center text-blue-300 py-10">No anime found</p>`;
+      }
+    }
+
+    function renderDesktopTable(filtered) {
+      const tbody = document.getElementById('animeList');
+      tbody.innerHTML = '';
+      filtered.forEach(anime => {
+        const progress = anime.totalEpisodes ? `${anime.episodesWatched}/${anime.totalEpisodes}` : anime.episodesWatched;
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/5 cursor-pointer" onclick="showDetails('${anime.id}')">
+            <td class="p-4 font-medium text-white">${anime.animeName}</td>
+            <td class="p-4 text-blue-300">${anime.season || '-'}</td>
+            <td class="p-4 text-white">${progress}</td>
+            <td class="p-4">${anime.rating ? `⭐ ${anime.rating}` : '-'}</td>
+            <td class="p-4"><span class="px-3 py-1 rounded-full text-xs ${getStatusClass(anime.status)}">${anime.status}</span></td>
+            <td class="p-4 text-center" onclick="event.stopImmediatePropagation()">
+              <button onclick="editAnime('${anime.id}');event.stopImmediatePropagation()" class="text-blue-400 mx-2"><i class="fas fa-edit"></i></button>
+              <button onclick="deleteAnime('${anime.id}');event.stopImmediatePropagation()" class="text-red-400 mx-2"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function showDetails(id) {
+      const anime = animeList.find(a => a.id === id);
+      if (!anime) return;
+      currentDetailId = id;
+
+      document.getElementById('detailName').textContent = anime.animeName;
+      document.getElementById('detailSeason').textContent = anime.season || '-';
+      document.getElementById('detailProgress').textContent = anime.totalEpisodes ? `${anime.episodesWatched} / ${anime.totalEpisodes}` : `${anime.episodesWatched} episodes`;
+      document.getElementById('detailProgressBar').style.width = anime.totalEpisodes ? `${(anime.episodesWatched / anime.totalEpisodes) * 100}%` : '100%';
+      document.getElementById('detailRating').innerHTML = anime.rating ? `⭐ ${anime.rating}/10` : '—';
+      document.getElementById('detailNotes').textContent = anime.notes || 'No notes added.';
+
+      const statusEl = document.getElementById('detailStatus');
+      statusEl.textContent = anime.status;
+      statusEl.className = `inline-block px-3 py-1 rounded-full text-xs ${getStatusClass(anime.status)}`;
+
+      document.getElementById('detailsModal').classList.remove('hidden');
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    function editFromDetails() {
+      closeDetailsModal();
+      if (currentDetailId) editAnime(currentDetailId);
+    }
+
+    function showAddModal() {
+      updateSuggestions();
+      document.getElementById('modalTitle').textContent = 'Add New Anime';
+      document.getElementById('editId').value = '';
+      document.getElementById('animeName').value = '';
+      document.getElementById('season').value = '';
+      document.getElementById('epWatched').value = '0';
+      document.getElementById('totalEps').value = '';
+      document.getElementById('rating').value = '0';
+      document.getElementById('status').value = 'Watching';
+      document.getElementById('notes').value = '';
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    function saveAnime() {
+      const id = document.getElementById('editId').value;
+      const animeName = document.getElementById('animeName').value.trim();
+      if (!animeName) return alert("Anime name is required!");
+
+      const anime = {
+        id: id || Date.now().toString(),
+        animeName,
+        season: document.getElementById('season').value.trim(),
+        episodesWatched: parseInt(document.getElementById('epWatched').value) || 0,
+        totalEpisodes: parseInt(document.getElementById('totalEps').value) || null,
+        rating: parseFloat(document.getElementById('rating').value) || 0,
+        status: document.getElementById('status').value,
+        notes: document.getElementById('notes').value.trim(),
+        lastUpdated: new Date().toISOString()
+      };
+
+      if (id) {
+        const index = animeList.findIndex(a => a.id === id);
+        if (index !== -1) animeList[index] = anime;
+      } else {
+        animeList.push(anime);
+      }
+
+      saveData();
+      closeModal();
+      renderAll();
+      updateStats();
+    }
+
+    function editAnime(id) {
+      const anime = animeList.find(a => a.id === id);
+      if (!anime) return;
+      document.getElementById('modalTitle').textContent = 'Edit Anime';
+      document.getElementById('editId').value = anime.id;
+      document.getElementById('animeName').value = anime.animeName;
+      document.getElementById('season').value = anime.season || '';
+      document.getElementById('epWatched').value = anime.episodesWatched;
+      document.getElementById('totalEps').value = anime.totalEpisodes || '';
+      document.getElementById('rating').value = anime.rating || 0;
+      document.getElementById('status').value = anime.status;
+      document.getElementById('notes').value = anime.notes || '';
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function deleteAnime(id) {
+      if (confirm('Delete this anime?')) {
+        animeList = animeList.filter(a => a.id !== id);
+        saveData();
+        renderAll();
+        updateStats();
+      }
+    }
+
+    function filterTable() {
+      const search = document.getElementById('searchInput').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      let filtered = animeList.filter(anime => {
+        const matchSearch = anime.animeName.toLowerCase().includes(search) || 
+                           (anime.season && anime.season.toLowerCase().includes(search));
+        const matchStatus = !statusFilter || anime.status === statusFilter;
+        return matchSearch && matchStatus;
+      });
+
+      renderAll(filtered);
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(20);
+      doc.text("My Anime Tracker", 20, 20);
+      let y = 35;
+      animeList.forEach(anime => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const progress = anime.totalEpisodes ? `${anime.episodesWatched}/${anime.totalEpisodes}` : anime.episodesWatched;
+        doc.text(anime.animeName, 20, y);
+        doc.text(anime.season || "-", 120, y);
+        doc.text(progress.toString(), 160, y);
+        y += 10;
+      });
+      doc.save("My_Anime_List.pdf");
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
