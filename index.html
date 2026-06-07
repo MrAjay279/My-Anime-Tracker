@@ -2,193 +2,813 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Anime Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000" id="themeColorMeta">
+  <title>AnimeList — Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap');
+
+    :root {
+      --cr-orange: #f47521;
+      --cr-orange-light: #ff8c42;
+      --cr-orange-dark: #d65e0f;
+      --cr-orange-glow: rgba(244, 117, 33, 0.35);
+      --bg-deep: #000000;
+      --bg-card: #141414;
+      --bg-card-hover: #1c1c1c;
+      --bg-nav: #0d0d0d;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(244, 117, 33, 0.4);
+      --accent: #f47521;
+      --accent-subtle: rgba(244, 117, 33, 0.12);
+      --text: #ffffff;
+      --text-muted: #a0a0a0;
+      --text-dim: #6b6b6b;
+      --input-bg: #1a1a1a;
+      --input-border: #2e2e2e;
+      --glass-light: rgba(255, 255, 255, 0.05);
+      --glass-light-border: rgba(255, 255, 255, 0.08);
+      --progress-bg: #2a2a2a;
+      --glow-1: rgba(244, 117, 33, 0.18);
+      --glow-2: rgba(244, 117, 33, 0.08);
+      --glow-3: transparent;
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+      --nav-h: 72px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --radius-card: 6px;
+      --radius-btn: 4px;
+    }
+
+    body.light-theme {
+      --bg-deep: #f0f0f0;
+      --bg-card: #ffffff;
+      --bg-card-hover: #fafafa;
+      --bg-nav: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-accent: rgba(244, 117, 33, 0.5);
+      --text: #232323;
+      --text-muted: #5c5c5c;
+      --text-dim: #8a8a8a;
+      --input-bg: #ffffff;
+      --input-border: #d4d4d4;
+      --glass-light: rgba(0, 0, 0, 0.04);
+      --glass-light-border: rgba(0, 0, 0, 0.08);
+      --progress-bg: #e8e8e8;
+      --glow-1: rgba(244, 117, 33, 0.06);
+      --glow-2: transparent;
+      --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+      font-family: 'Lato', system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
       min-height: 100vh;
-      color: #1e2937;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 45% at 50% -5%, var(--glow-1), transparent),
+        radial-gradient(ellipse 40% 30% at 100% 50%, var(--glow-2), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 24px);
     }
 
     .glass {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(147, 51, 234, 0.15);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
     }
 
+    .glass-light {
+      background: var(--glass-light);
+      border: 1px solid var(--glass-light-border);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--cr-orange);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-weight: 900;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .brand-title span { color: var(--cr-orange); }
+
+    .text-accent { color: var(--cr-orange); }
+    .text-muted-theme { color: var(--text-muted); }
+
+    .progress-container {
+      height: 6px;
+      background: var(--progress-bg);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--cr-orange);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .anime-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .anime-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      box-shadow: 0 8px 32px var(--cr-orange-glow);
+      transform: translateY(-1px);
+    }
+
+    .anime-card.pinned {
+      border-left: 3px solid var(--cr-orange);
+    }
+
+    .card-poster-slot {
+      width: 52px;
+      height: 74px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+    }
+
+    .grid-poster-slot {
+      width: 100%;
+      aspect-ratio: 3/4;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-poster {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .card-poster-slot.loaded .card-poster { opacity: 1; }
+
+    .card-poster-skeleton {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 16px;
+      transition: opacity 0.3s ease;
+    }
+
+    .card-poster-slot.loaded .card-poster-skeleton { opacity: 0; pointer-events: none; }
+
+    /* Swipe to delete */
+    .swipe-card-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      touch-action: pan-y;
+    }
+
+    .swipe-delete-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 24px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      gap: 8px;
+      border-radius: 16px;
+    }
+
+    .swipe-card-content {
+      position: relative;
+      transition: transform 0.2s ease;
+      will-change: transform;
+    }
+
+    .swipe-card-wrapper.swiping .swipe-card-content { transition: none; }
+
+    /* Grid layout */
+    .anime-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .anime-grid .anime-card {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+
+    .anime-grid .card-body-text { flex: 1; }
+
+  .anime-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .tab-panel { display: none; animation: fadeUp 0.35s ease; }
+    .tab-panel.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--nav-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--bg-nav);
+      border-top: 2px solid var(--cr-orange);
+      z-index: 40;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    body.light-theme .bottom-nav {
+      box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      height: var(--nav-h);
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 500;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      min-width: 0;
+    }
+
+    .nav-item i { font-size: 18px; }
+    .nav-item.active {
+      color: var(--cr-orange);
+      background: var(--accent-subtle);
+      font-weight: 700;
+    }
+
+    .fab {
+      position: fixed;
+      bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+      right: max(16px, calc(50% - 450px + 16px));
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--cr-orange);
+      color: white;
+      border: none;
+      box-shadow: 0 6px 24px var(--cr-orange-glow);
+      cursor: pointer;
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: transform 0.2s ease, background 0.2s;
+    }
+
+    .fab:hover {
+      transform: scale(1.06);
+      background: var(--cr-orange-light);
+    }
+
+    .btn-primary {
+      background: var(--cr-orange);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--cr-orange-light); }
+
+    .input-field {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--cr-orange);
+      box-shadow: 0 0 0 2px var(--accent-subtle);
+    }
+
+    .input-field::placeholder { color: var(--text-dim); }
+    select.input-field option { background: #141414; color: var(--text); }
+    body.light-theme select.input-field option { background: #fff; color: #232323; }
+
+    .status-pill {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .status-completed { background: rgba(76, 175, 80, 0.15); color: #66bb6a; border: 1px solid rgba(76, 175, 80, 0.35); }
+    .status-watching { background: var(--accent-subtle); color: var(--cr-orange-light); border: 1px solid var(--border-accent); }
+    .status-dropped { background: rgba(229, 57, 53, 0.15); color: #ef5350; border: 1px solid rgba(229, 57, 53, 0.35); }
+    .status-plan { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--border); }
+    body.light-theme .status-plan { background: rgba(0,0,0,0.04); }
+
+    .menu-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 200px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 50;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .menu-item:hover { background: var(--accent-subtle); }
+
+    .view-toggle {
+      display: flex;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--input-border);
+    }
+
+    .view-toggle button {
+      padding: 8px 12px;
+      background: var(--input-bg);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .view-toggle button.active {
+      background: var(--accent-subtle);
+      color: var(--cr-orange);
+      font-weight: 700;
+    }
+
+  .icon-btn {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .btn-ep-plus {
+      background: var(--cr-orange);
+      color: #fff;
+      border: none;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 0 10px;
+      height: 28px;
+      border-radius: var(--radius-btn);
+    }
+
+    .btn-ep-plus:hover { background: var(--cr-orange-light); }
+
+    /* Autocomplete */
+    .autocomplete-wrap { position: relative; }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      max-height: 220px;
+      overflow-y: auto;
+      border-radius: 12px;
+      z-index: 60;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+    }
+
+    .autocomplete-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: none;
+      width: 100%;
+      text-align: left;
+      background: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .autocomplete-item:hover { background: var(--accent-subtle); }
+
+    .autocomplete-item img {
+      width: 36px; height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .autocomplete-meta { font-size: 11px; color: var(--text-muted); }
+
+    /* Toasts */
+    .toast-container {
+      position: fixed;
+      bottom: calc(var(--nav-h) + var(--safe-bottom) + 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: min(360px, calc(100vw - 32px));
+      pointer-events: none;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      pointer-events: auto;
+      animation: toastIn 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toast.success { border-left: 3px solid #66bb6a; }
+    .toast.error { border-left: 3px solid #ef5350; }
+    .toast.info { border-left: 3px solid var(--cr-orange); }
+
+    .toast-action {
+      margin-left: auto;
+      padding: 4px 12px;
+      border-radius: var(--radius-btn);
+      background: var(--accent-subtle);
+      color: var(--cr-orange);
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .toast-action:hover { background: rgba(244, 117, 33, 0.25); }
+
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+
+    .stat-ring { position: relative; width: 120px; height: 120px; }
+    .stat-ring svg { transform: rotate(-90deg); }
+    .stat-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+    .stat-ring .bg { stroke: var(--progress-bg); }
+
+    .bar-chart-row { display: flex; align-items: center; gap: 12px; }
+    .bar-chart-label { width: 90px; font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
+    .bar-chart-track { flex: 1; height: 10px; background: var(--progress-bg); border-radius: 999px; overflow: hidden; }
+    .bar-chart-fill { height: 100%; border-radius: 999px; transition: width 0.8s ease; }
+    .bar-chart-value { width: 32px; text-align: right; font-size: 14px; font-weight: 600; }
+
+    .modal-overlay { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
     .poster-container {
-      background: #f1f5f9;
-      min-height: 340px;
+      background: linear-gradient(180deg, rgba(244,117,33,0.08) 0%, transparent 100%);
+      min-height: 280px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .anime-poster {
-      max-height: 400px;
-      max-width: 100%;
-      object-fit: contain;
-      transition: transform 0.4s ease;
+    .anime-poster { max-height: 360px; max-width: 100%; object-fit: contain; border-radius: var(--radius-card); }
+
+    .section-banner {
+      border-left: 3px solid var(--cr-orange);
+      padding-left: 14px;
     }
-    .anime-poster:hover { transform: scale(1.05); }
+
+    .section-icon {
+      width: 40px; height: 40px;
+      background: var(--accent-subtle);
+      border-radius: var(--radius-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cr-orange);
+      flex-shrink: 0;
+    }
+
+    .stat-value-orange { color: var(--cr-orange); }
+    .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--text-muted); }
+
+    .app-header {
+      border-bottom: 1px solid var(--border);
+    }
+
+    body.light-theme .anime-card:hover {
+      box-shadow: 0 4px 20px rgba(244, 117, 33, 0.15);
+    }
+
+    .anime-grid .card-poster-slot {
+      border-radius: var(--radius-card);
+    }
+
+    .anime-grid .anime-card:hover .card-poster-slot {
+      outline: 2px solid var(--cr-orange);
+      outline-offset: -2px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--cr-orange); border-radius: 999px; }
+
+    @media (min-width: 768px) {
+      .swipe-card-wrapper .swipe-delete-bg { display: none; }
+      .swipe-card-content { transform: none !important; }
+    }
   </style>
 </head>
 <body>
-  <div class="max-w-7xl mx-auto p-4 md:p-6">
 
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold flex items-center gap-3 header-gradient">
-        <span class="text-4xl">🌌</span> Anime Tracker
-      </h1>
-      <div class="flex gap-2">
-        <button onclick="exportJSON()" class="px-4 py-2.5 bg-violet-600 text-white rounded-2xl text-sm flex items-center gap-2">Export</button>
-        <button onclick="document.getElementById('importInput').click()" class="px-4 py-2.5 bg-emerald-600 text-white rounded-2xl text-sm flex items-center gap-2">Import</button>
-        <button onclick="exportPDF()" class="px-4 py-2.5 bg-blue-600 text-white rounded-2xl text-sm flex items-center gap-2">PDF</button>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="app-shell px-4 pt-5 md:pt-8">
+
+    <header class="app-header flex justify-between items-center mb-6 pb-4">
+      <div class="brand-logo">
+        <div class="brand-icon"><i class="fas fa-play"></i></div>
+        <div>
+          <p class="text-[10px] text-muted-theme font-bold tracking-[0.15em] uppercase mb-0.5">My Library</p>
+          <h1 class="brand-title">Anime<span>List</span></h1>
+        </div>
       </div>
-    </div>
-
-    <!-- Stats -->
-    <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
-
-    <!-- Controls with Sort -->
-    <div class="flex flex-col md:flex-row gap-3 mb-6">
-      <button onclick="showAddModal()" class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-5 py-3 rounded-3xl font-medium flex items-center gap-2">
-        <i class="fas fa-plus"></i> Add Anime
-      </button>
-
-      <input type="text" id="searchInput" placeholder="Search anime..." 
-             class="flex-1 glass rounded-3xl px-5 py-3 text-sm focus:outline-none"
-             onkeyup="filterTable()">
-
-      <select id="statusFilter" onchange="filterTable()" class="glass rounded-3xl px-5 py-3 text-sm">
-        <option value="">All Status</option>
-        <option value="Watching">Watching</option>
-        <option value="Completed">Completed</option>
-        <option value="Dropped">Dropped</option>
-        <option value="Plan to Watch">Plan to Watch</option>
-      </select>
-
-      <select id="sortFilter" onchange="filterTable()" class="glass rounded-3xl px-5 py-3 text-sm">
-        <option value="name-asc">Name (A-Z)</option>
-        <option value="name-desc">Name (Z-A)</option>
-        <option value="rating-desc">Rating (High to Low)</option>
-        <option value="rating-asc">Rating (Low to High)</option>
-        <option value="progress-desc">Progress (High to Low)</option>
-        <option value="updated-desc">Recently Updated</option>
-      </select>
-    </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleTheme()" id="themeToggle" class="w-10 h-10 rounded glass-light flex items-center justify-center text-muted-theme hover:text-accent transition-colors" title="Toggle theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <div class="relative">
+          <button onclick="toggleMenu()" class="w-10 h-10 rounded glass-light flex items-center justify-center text-muted-theme hover:text-accent transition-colors">
+            <i class="fas fa-ellipsis-vertical"></i>
+          </button>
+          <div id="menuDropdown" class="menu-dropdown glass hidden">
+            <button onclick="exportJSON(); toggleMenu()" class="menu-item"><i class="fas fa-download text-accent w-4"></i> Export JSON</button>
+            <button onclick="document.getElementById('importInput').click(); toggleMenu()" class="menu-item"><i class="fas fa-upload text-accent w-4"></i> Import JSON</button>
+            <button onclick="exportPDF(); toggleMenu()" class="menu-item"><i class="fas fa-file-pdf text-accent w-4"></i> Export PDF</button>
+          </div>
+        </div>
+      </div>
+    </header>
 
     <input type="file" id="importInput" accept=".json" class="hidden" onchange="importJSON(event)">
 
-    <!-- Mobile Cards -->
-    <div id="mobileView" class="space-y-4 md:hidden"></div>
+    <!-- TAB: All -->
+    <section id="tab-all" class="tab-panel active">
+      <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <div class="relative flex-1">
+          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+          <input type="text" id="searchInput" placeholder="Search anime or season..."
+                 class="w-full input-field rounded-2xl pl-11 pr-4 py-3 text-sm">
+        </div>
+        <select id="statusFilter" class="input-field rounded-2xl px-4 py-3 text-sm sm:w-36">
+          <option value="">All Status</option>
+          <option value="Watching">Watching</option>
+          <option value="Completed">Completed</option>
+          <option value="Dropped">Dropped</option>
+          <option value="Plan to Watch">Plan to Watch</option>
+        </select>
+        <select id="sortFilter" class="input-field rounded-2xl px-4 py-3 text-sm sm:w-40">
+          <option value="name-asc">Name A → Z</option>
+          <option value="name-desc">Name Z → A</option>
+          <option value="rating-desc">Rating ↓</option>
+          <option value="rating-asc">Rating ↑</option>
+          <option value="progress-desc">Progress ↓</option>
+          <option value="updated-desc">Recently Updated</option>
+        </select>
+      </div>
+      <div class="flex items-center justify-between mb-3">
+        <p id="allCount" class="text-xs text-muted-theme font-bold uppercase tracking-wider"></p>
+        <div class="view-toggle">
+          <button id="viewListBtn" onclick="setViewMode('list')" class="active" title="List view"><i class="fas fa-list"></i></button>
+          <button id="viewGridBtn" onclick="setViewMode('grid')" title="Grid view"><i class="fas fa-grip"></i></button>
+        </div>
+      </div>
+      <div id="allList" class="anime-list"></div>
+    </section>
 
-    <!-- Desktop Table -->
-    <div class="hidden md:block glass rounded-3xl overflow-hidden">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-violet-100 text-xs uppercase text-slate-500">
-            <th class="p-4 text-left">Anime</th>
-            <th class="p-4">Season</th>
-            <th class="p-4">Progress</th>
-            <th class="p-4">Rating</th>
-            <th class="p-4">Status</th>
-            <th class="p-4 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="animeList" class="divide-y divide-slate-100 text-sm"></tbody>
-      </table>
-    </div>
+    <!-- TAB: Watchlist -->
+    <section id="tab-watchlist" class="tab-panel">
+      <div class="glass p-4 mb-5 flex items-center gap-3 section-banner">
+        <div class="section-icon"><i class="fas fa-play"></i></div>
+        <div>
+          <p class="font-bold text-sm">Watchlist</p>
+          <p class="text-xs text-muted-theme">Currently watching & plan to watch</p>
+        </div>
+      </div>
+      <h3 class="text-xs font-bold text-accent uppercase tracking-wider mb-3"><i class="fas fa-circle-play text-[10px]"></i> Watching</h3>
+      <div id="watchingList" class="anime-list mb-6"></div>
+      <h3 class="text-xs font-bold text-muted-theme uppercase tracking-wider mb-3"><i class="fas fa-clock text-[10px]"></i> Plan to Watch</h3>
+      <div id="planList" class="anime-list"></div>
+    </section>
+
+    <!-- TAB: Completed -->
+    <section id="tab-completed" class="tab-panel">
+      <div class="glass p-4 mb-5 flex items-center gap-3 section-banner">
+        <div class="section-icon"><i class="fas fa-check-double"></i></div>
+        <div>
+          <p class="font-bold text-sm">Completed</p>
+          <p class="text-xs text-muted-theme" id="completedSubtitle">Shows you've finished</p>
+        </div>
+      </div>
+      <div id="completedList" class="anime-list"></div>
+    </section>
+
+    <!-- TAB: Stats -->
+    <section id="tab-stats" class="tab-panel">
+      <div id="statsOverview" class="grid grid-cols-2 gap-3 mb-5"></div>
+      <div class="glass rounded-2xl p-5 mb-4">
+        <h3 class="text-sm font-bold mb-4"><i class="fas fa-chart-pie text-accent"></i> Status Breakdown</h3>
+        <div id="statusChart" class="space-y-3"></div>
+      </div>
+      <div class="glass rounded-2xl p-5 mb-4">
+        <h3 class="text-sm font-bold mb-4"><i class="fas fa-film text-accent"></i> Episode Progress</h3>
+        <div id="episodeStats" class="flex items-center justify-center gap-8 flex-wrap"></div>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <h3 class="text-sm font-bold mb-4"><i class="fas fa-trophy text-accent"></i> Top Rated</h3>
+        <div id="topRated" class="space-y-2"></div>
+      </div>
+    </section>
   </div>
 
-  <!-- Details Modal with Loading -->
-  <div id="detailsModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeDetailsModal()">
-    <div class="glass w-full max-w-md rounded-3xl overflow-hidden shadow-2xl" onclick="event.stopImmediatePropagation()">
-      <div class="poster-container" id="posterContainer">
-        <div id="loadingSpinner" class="w-10 h-10 border-4 border-slate-300 border-t-violet-600 rounded-full animate-spin"></div>
-        <img id="detailImage" class="anime-poster hidden" alt="Anime Poster">
-      </div>
+  <button class="fab" onclick="showAddModal()" aria-label="Add anime"><i class="fas fa-plus"></i></button>
 
+  <nav class="bottom-nav">
+    <div class="nav-inner">
+      <button class="nav-item active" data-tab="all" onclick="switchTab('all')"><i class="fas fa-layer-group"></i><span>All</span></button>
+      <button class="nav-item" data-tab="watchlist" onclick="switchTab('watchlist')"><i class="fas fa-bookmark"></i><span>Watchlist</span></button>
+      <button class="nav-item" data-tab="completed" onclick="switchTab('completed')"><i class="fas fa-check-circle"></i><span>Completed</span></button>
+      <button class="nav-item" data-tab="stats" onclick="switchTab('stats')"><i class="fas fa-chart-simple"></i><span>Stats</span></button>
+    </div>
+  </nav>
+
+  <!-- Details Modal -->
+  <div id="detailsModal" class="hidden fixed inset-0 modal-overlay flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onclick="if(event.target===this) closeDetailsModal()">
+    <div class="glass w-full max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="poster-container">
+        <div id="loadingSpinner" class="w-10 h-10 border-4 border-white/10 border-t-[#f47521] rounded-full animate-spin"></div>
+        <img id="detailImage" class="anime-poster hidden" alt="">
+      </div>
       <div class="p-5 space-y-4">
-        <h2 id="detailName" class="text-xl font-bold text-slate-800"></h2>
-        <!-- Rest of details content same as previous -->
+        <h2 id="detailName" class="text-xl font-bold"></h2>
         <div class="grid grid-cols-2 gap-4 text-sm">
-          <div><p class="text-xs text-slate-500">SEASON</p><p id="detailSeason" class="font-medium"></p></div>
-          <div><p class="text-xs text-slate-500">STATUS</p><span id="detailStatus" class="inline-block px-3 py-1 text-xs rounded-full"></span></div>
+          <div><p class="text-[10px] text-slate-500 uppercase mb-1">Season</p><p id="detailSeason"></p></div>
+          <div><p class="text-[10px] text-slate-500 uppercase mb-1">Status</p><span id="detailStatus" class="status-pill inline-block px-3 py-1 rounded-full"></span></div>
         </div>
-
         <div>
-          <p class="text-xs text-slate-500 mb-1">PROGRESS</p>
-          <p id="detailProgress" class="font-mono"></p>
-          <div class="progress-container mt-2">
-            <div id="detailProgressBar" class="progress-bar"></div>
+          <div class="flex justify-between text-sm mb-2">
+            <p class="text-[10px] text-slate-500 uppercase">Progress</p>
+            <p id="detailProgress" class="font-mono text-accent"></p>
           </div>
+          <div class="progress-container"><div id="detailProgressBar" class="progress-bar"></div></div>
         </div>
-
-        <div>
-          <p class="text-xs text-slate-500">RATING</p>
-          <p id="detailRating" class="text-3xl font-bold text-amber-500"></p>
-        </div>
-
-        <div>
-          <p class="text-xs text-slate-500">NOTES</p>
-          <p id="detailNotes" class="text-slate-600 text-sm"></p>
-        </div>
+        <div><p class="text-[10px] text-muted-theme uppercase mb-1 font-bold">Rating</p><p id="detailRating" class="text-3xl font-bold text-accent"></p></div>
+        <div><p class="text-[10px] text-slate-500 uppercase mb-1">Notes</p><p id="detailNotes" class="text-slate-400 text-sm"></p></div>
       </div>
-
-      <div class="flex gap-3 p-5 pt-0 border-t">
-        <button onclick="closeDetailsModal()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 rounded-2xl text-sm">Close</button>
-        <button onclick="editFromDetails()" class="flex-1 py-3 bg-violet-600 text-white rounded-2xl text-sm">Edit</button>
+      <div class="flex gap-3 p-5 border-t border-white/5">
+        <button onclick="deleteFromDetails()" class="py-3 px-4 bg-red-500/10 text-red-400 rounded-2xl text-sm"><i class="fas fa-trash"></i></button>
+        <button onclick="closeDetailsModal()" class="flex-1 py-3 glass-light rounded-2xl text-sm">Close</button>
+        <button onclick="editFromDetails()" class="flex-1 py-3 btn-primary rounded text-sm">Edit</button>
       </div>
     </div>
   </div>
 
-  <!-- Add/Edit Modal (compact) -->
-  <div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="glass w-full max-w-md rounded-3xl p-6">
-      <h2 id="modalTitle" class="text-xl font-bold mb-5">Add Anime</h2>
+  <!-- Add/Edit Modal -->
+  <div id="modal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+    <div class="glass w-full max-w-md rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <h2 id="modalTitle" class="text-xl font-bold">Add Anime</h2>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-lg glass-light flex items-center justify-center text-slate-400"><i class="fas fa-times text-sm"></i></button>
+      </div>
       <input type="hidden" id="editId">
+      <input type="hidden" id="malId">
+      <input type="hidden" id="posterUrl">
 
       <div class="space-y-4 text-sm">
+        <div class="autocomplete-wrap">
+          <label class="block mb-1.5 text-slate-400 text-xs font-medium uppercase">Anime Name</label>
+          <input id="animeName" type="text" class="w-full input-field rounded-xl px-4 py-3" placeholder="Search MyAnimeList..." autocomplete="off">
+          <div id="autocompleteDropdown" class="autocomplete-dropdown glass hidden"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block mb-1.5 text-slate-400 text-xs uppercase">Season</label><input id="season" type="text" class="w-full input-field rounded-xl px-4 py-3" placeholder="S1"></div>
+          <div><label class="block mb-1.5 text-slate-400 text-xs uppercase">Rating</label><input id="rating" type="number" min="0" max="10" step="0.1" value="0" class="w-full input-field rounded-xl px-4 py-3"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block mb-1.5 text-slate-400 text-xs uppercase">Watched</label><input id="epWatched" type="number" value="0" class="w-full input-field rounded-xl px-4 py-3"></div>
+          <div><label class="block mb-1.5 text-slate-400 text-xs uppercase">Total Eps</label><input id="totalEps" type="number" class="w-full input-field rounded-xl px-4 py-3"></div>
+        </div>
         <div>
-          <label class="block mb-1 text-slate-600">Anime Name</label>
-          <input id="animeName" type="text" class="w-full glass rounded-2xl px-4 py-3" placeholder="Solo Leveling">
-        </div>
-        <!-- Other fields remain the same -->
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="block mb-1 text-slate-600">Season</label><input id="season" type="text" class="w-full glass rounded-2xl px-4 py-3"></div>
-          <div><label class="block mb-1 text-slate-600">Rating</label><input id="rating" type="number" min="0" max="10" step="0.1" value="0" class="w-full glass rounded-2xl px-4 py-3"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="block mb-1 text-slate-600">Watched</label><input id="epWatched" type="number" value="0" class="w-full glass rounded-2xl px-4 py-3"></div>
-          <div><label class="block mb-1 text-slate-600">Total Eps</label><input id="totalEps" type="number" class="w-full glass rounded-2xl px-4 py-3"></div>
-        </div>
-        <div>
-          <label class="block mb-1 text-slate-600">Status</label>
-          <select id="status" class="w-full glass rounded-2xl px-4 py-3">
+          <label class="block mb-1.5 text-slate-400 text-xs uppercase">Status</label>
+          <select id="status" class="w-full input-field rounded-xl px-4 py-3">
             <option value="Watching">Watching</option>
             <option value="Completed">Completed</option>
             <option value="Dropped">Dropped</option>
             <option value="Plan to Watch">Plan to Watch</option>
           </select>
         </div>
-        <div>
-          <label class="block mb-1 text-slate-600">Notes</label>
-          <textarea id="notes" class="w-full glass rounded-3xl px-4 py-3 h-20"></textarea>
-        </div>
+        <div><label class="block mb-1.5 text-slate-400 text-xs uppercase">Notes</label><textarea id="notes" class="w-full input-field rounded-xl px-4 py-3 h-20 resize-none"></textarea></div>
       </div>
-
       <div class="flex gap-3 mt-6">
-        <button onclick="closeModal()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 rounded-2xl">Cancel</button>
-        <button onclick="saveAnime()" class="flex-1 py-3 bg-violet-600 text-white rounded-2xl">Save</button>
+        <button onclick="closeModal()" class="flex-1 py-3 glass-light rounded-xl text-sm">Cancel</button>
+        <button onclick="saveAnime()" class="flex-1 py-3 btn-primary rounded text-sm">Save</button>
       </div>
     </div>
   </div>
@@ -196,133 +816,673 @@
   <script>
     let animeList = [];
     let currentDetailId = null;
+    let currentTab = 'all';
+    let viewMode = localStorage.getItem('viewMode') || 'list';
+    let pendingDelete = null;
+    let searchDebounceTimer = null;
+    let autocompleteTimer = null;
 
-    async function fetchAnimeImage(animeName) {
+    const posterCache = new Map();
+    const posterPending = new Map();
+    const posterFetchQueue = [];
+    let posterFetchRunning = false;
+    let posterObserver = null;
+    const POSTER_PREFETCH_MARGIN = '320px 0px';
+    const JIKAN_FETCH_DELAY = 400;
+
+    // ─── Theme ───
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      applyTheme(theme);
+    }
+
+    function applyTheme(theme) {
+      const isLight = theme === 'light';
+      document.body.classList.toggle('light-theme', isLight);
+      document.getElementById('themeColorMeta').content = isLight ? '#ffffff' : '#000000';
+      document.getElementById('themeToggle').innerHTML = isLight
+        ? '<i class="fas fa-sun text-accent"></i>'
+        : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('theme', theme);
+    }
+
+    function toggleTheme() {
+      applyTheme(document.body.classList.contains('light-theme') ? 'dark' : 'light');
+    }
+
+    // ─── Toasts ───
+    function showToast(message, type = 'info', options = {}) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast glass ${type}`;
+      toast.innerHTML = `<span class="flex-1">${escapeHtml(message)}</span>`;
+
+      if (options.action) {
+        const btn = document.createElement('button');
+        btn.className = 'toast-action';
+        btn.textContent = options.action.label;
+        btn.onclick = () => { options.action.onClick(); toast.remove(); };
+        toast.appendChild(btn);
+      }
+
+      container.appendChild(toast);
+      const duration = options.duration ?? (options.action ? 5000 : 3000);
+      setTimeout(() => toast.remove(), duration);
+    }
+
+    // ─── View mode ───
+    function setViewMode(mode) {
+      viewMode = mode;
+      localStorage.setItem('viewMode', mode);
+      document.getElementById('viewListBtn').classList.toggle('active', mode === 'list');
+      document.getElementById('viewGridBtn').classList.toggle('active', mode === 'grid');
+      filterTable();
+    }
+
+    function initViewMode() {
+      document.getElementById('viewListBtn').classList.toggle('active', viewMode === 'list');
+      document.getElementById('viewGridBtn').classList.toggle('active', viewMode === 'grid');
+    }
+
+    // ─── Tabs ───
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.querySelector(`.nav-item[data-tab="${tab}"]`).classList.add('active');
+      if (tab === 'stats') updateStatsPage();
+      if (tab === 'watchlist') renderWatchlist();
+      if (tab === 'completed') renderCompleted();
+      if (['all', 'watchlist', 'completed'].includes(tab)) observePostersInActiveTab();
+    }
+
+    function toggleMenu() {
+      document.getElementById('menuDropdown').classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.relative')) document.getElementById('menuDropdown').classList.add('hidden');
+      if (!e.target.closest('.autocomplete-wrap')) document.getElementById('autocompleteDropdown').classList.add('hidden');
+    });
+
+    // ─── Jikan API ───
+    async function fetchAnimeImage(animeName, malId) {
+      if (malId) {
+        try {
+          const res = await fetch(`https://api.jikan.moe/v4/anime/${malId}`);
+          if (res.ok) {
+            const data = await res.json();
+            return data.data?.images?.jpg?.large_image_url || data.data?.images?.jpg?.image_url || null;
+          }
+        } catch (e) {}
+      }
       try {
         const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(animeName)}&limit=1`);
+        if (!res.ok) return null;
         const data = await res.json();
-        if (data.data && data.data.length > 0) {
+        if (data.data?.length > 0) {
           return data.data[0].images.jpg.large_image_url || data.data[0].images.jpg.image_url;
         }
       } catch (e) {}
       return null;
     }
 
+    function hasCjkCharacters(str) {
+      return /[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]/.test(str);
+    }
+
+    function getPreferredTitle(anime) {
+      if (anime.title_english?.trim()) return anime.title_english.trim();
+
+      const englishEntry = anime.titles?.find(t => t.type === 'English');
+      if (englishEntry?.title?.trim()) return englishEntry.title.trim();
+
+      const defaultEntry = anime.titles?.find(t => t.type === 'Default');
+      if (defaultEntry?.title?.trim() && !hasCjkCharacters(defaultEntry.title)) {
+        return defaultEntry.title.trim();
+      }
+
+      if (anime.title?.trim() && !hasCjkCharacters(anime.title)) return anime.title.trim();
+
+      for (const syn of anime.title_synonyms || []) {
+        if (syn?.trim() && !hasCjkCharacters(syn)) return syn.trim();
+      }
+
+      return anime.title?.trim() || 'Unknown';
+    }
+
+    function getAlternateTitle(anime, preferred) {
+      const candidates = [
+        anime.title,
+        anime.title_japanese,
+        ...(anime.title_synonyms || []),
+        ...(anime.titles || []).map(t => t.title),
+      ].filter(Boolean);
+
+      const alt = candidates.find(t => t.trim() !== preferred && t.trim());
+      return alt?.trim() || '';
+    }
+
+    async function searchJikanAnime(query) {
+      if (query.length < 2) return [];
+      try {
+        const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=8`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.data || [];
+      } catch (e) { return []; }
+    }
+
+    function setupAutocomplete() {
+      const input = document.getElementById('animeName');
+      const dropdown = document.getElementById('autocompleteDropdown');
+
+      input.addEventListener('input', () => {
+        clearTimeout(autocompleteTimer);
+        const q = input.value.trim();
+        if (q.length < 2) { dropdown.classList.add('hidden'); return; }
+
+        autocompleteTimer = setTimeout(async () => {
+          dropdown.innerHTML = '<div class="p-3 text-center text-slate-500 text-xs"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+          dropdown.classList.remove('hidden');
+          const results = await searchJikanAnime(q);
+          if (results.length === 0) {
+            dropdown.innerHTML = '<div class="p-3 text-center text-slate-500 text-xs">No results found</div>';
+            return;
+          }
+          dropdown.innerHTML = results.map(a => {
+            const img = a.images?.jpg?.small_image_url || '';
+            const year = a.year || a.aired?.prop?.from?.year || '';
+            const eps = a.episodes ? `${a.episodes} eps` : '?';
+            const displayTitle = getPreferredTitle(a);
+            const altTitle = getAlternateTitle(a, displayTitle);
+            const title = escapeHtml(displayTitle);
+            const altLine = altTitle ? `<div class="autocomplete-meta truncate">${escapeHtml(altTitle)}</div>` : '';
+            return `<button type="button" class="autocomplete-item" onclick="selectAutocomplete(${a.mal_id})">
+              <img src="${img}" alt="" loading="lazy">
+              <div class="min-w-0">
+                <div class="truncate font-medium">${title}</div>
+                ${altLine}
+                <div class="autocomplete-meta">${year ? year + ' · ' : ''}${eps}</div>
+              </div>
+            </button>`;
+          }).join('');
+          window._autocompleteResults = results;
+        }, 450);
+      });
+    }
+
+    function selectAutocomplete(malId) {
+      const item = (window._autocompleteResults || []).find(a => a.mal_id === malId);
+      if (!item) return;
+
+      const displayTitle = getPreferredTitle(item);
+      document.getElementById('animeName').value = displayTitle;
+      document.getElementById('malId').value = item.mal_id;
+      if (item.episodes) document.getElementById('totalEps').value = item.episodes;
+
+      const poster = item.images?.jpg?.large_image_url || item.images?.jpg?.image_url;
+      if (poster) {
+        document.getElementById('posterUrl').value = poster;
+        posterCache.set(displayTitle, poster);
+      }
+
+      document.getElementById('autocompleteDropdown').classList.add('hidden');
+    }
+
+    function getPosterUrl(anime) {
+      const key = anime.animeName;
+      if (anime.posterUrl) {
+        posterCache.set(key, anime.posterUrl);
+        return Promise.resolve(anime.posterUrl);
+      }
+      if (posterCache.has(key)) return Promise.resolve(posterCache.get(key));
+      if (posterPending.has(key)) return posterPending.get(key);
+
+      const promise = new Promise(resolve => {
+        posterFetchQueue.push({ animeName: key, malId: anime.malId, resolve });
+        processPosterQueue();
+      });
+      posterPending.set(key, promise);
+      return promise;
+    }
+
+    async function processPosterQueue() {
+      if (posterFetchRunning) return;
+      posterFetchRunning = true;
+      while (posterFetchQueue.length > 0) {
+        const { animeName, malId, resolve } = posterFetchQueue.shift();
+        if (posterCache.has(animeName)) { resolve(posterCache.get(animeName)); continue; }
+        const url = await fetchAnimeImage(animeName, malId);
+        posterCache.set(animeName, url);
+        posterPending.delete(animeName);
+        resolve(url);
+        if (posterFetchQueue.length > 0) await new Promise(r => setTimeout(r, JIKAN_FETCH_DELAY));
+      }
+      posterFetchRunning = false;
+    }
+
+    function initPosterObserver() {
+      if (posterObserver) return;
+      posterObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          posterObserver.unobserve(entry.target);
+          loadCardPoster(entry.target);
+        });
+      }, { rootMargin: POSTER_PREFETCH_MARGIN, threshold: 0 });
+    }
+
+    function observePostersInContainer(container) {
+      if (!container) return;
+      initPosterObserver();
+      container.querySelectorAll('[data-poster-name]:not([data-poster-loaded])').forEach(slot => {
+        posterObserver.observe(slot);
+      });
+    }
+
+    function observePostersInActiveTab() {
+      const map = { all: 'allList', watchlist: ['watchingList', 'planList'], completed: 'completedList' };
+      const targets = map[currentTab];
+      if (!targets) return;
+      (Array.isArray(targets) ? targets : [targets]).forEach(id => {
+        observePostersInContainer(document.getElementById(id));
+      });
+    }
+
+    async function loadCardPoster(slot) {
+      const animeName = slot.dataset.posterName;
+      const malId = slot.dataset.malId || null;
+      const storedUrl = slot.dataset.posterUrl;
+      if (!animeName || slot.dataset.posterLoaded === 'true') return;
+      slot.dataset.posterLoaded = 'true';
+
+      const img = slot.querySelector('.card-poster');
+      let url = storedUrl || null;
+      if (!url) {
+        if (posterCache.has(animeName)) url = posterCache.get(animeName);
+        else url = await getPosterUrl({ animeName, malId: malId ? parseInt(malId) : null });
+      }
+
+      if (url) {
+        img.onload = () => slot.classList.add('loaded');
+        img.onerror = () => slot.classList.add('error');
+        img.src = url;
+        img.alt = animeName;
+      } else {
+        slot.classList.add('error');
+        slot.querySelector('.card-poster-skeleton').innerHTML = '<i class="fas fa-image"></i>';
+      }
+    }
+
+    // ─── Data ───
     function loadData() {
       animeList = JSON.parse(localStorage.getItem('myAnimeList') || '[]');
-      renderAll();
-      updateStats();
+      animeList.forEach(a => { if (a.pinned === undefined) a.pinned = false; });
+      refreshAll();
     }
 
     function saveData() {
       localStorage.setItem('myAnimeList', JSON.stringify(animeList));
     }
 
-    function updateStats() {
-      const total = animeList.length;
-      const completed = animeList.filter(a => a.status === 'Completed').length;
-      const watching = animeList.filter(a => a.status === 'Watching').length;
-      const plan = animeList.filter(a => a.status === 'Plan to Watch').length;
-
-      document.getElementById('stats').innerHTML = `
-        <div class="glass rounded-3xl p-4 text-center">
-          <p class="text-xs text-violet-600">TOTAL</p>
-          <p class="text-3xl font-bold">${total}</p>
-        </div>
-        <div class="glass rounded-3xl p-4 text-center">
-          <p class="text-xs text-emerald-600">COMPLETED</p>
-          <p class="text-3xl font-bold text-emerald-600">${completed}</p>
-        </div>
-        <div class="glass rounded-3xl p-4 text-center">
-          <p class="text-xs text-blue-600">WATCHING</p>
-          <p class="text-3xl font-bold text-blue-600">${watching}</p>
-        </div>
-        <div class="glass rounded-3xl p-4 text-center">
-          <p class="text-xs text-amber-600">PLAN</p>
-          <p class="text-3xl font-bold text-amber-600">${plan}</p>
-        </div>
-      `;
+    function refreshAll() {
+      filterTable();
+      renderWatchlist();
+      renderCompleted();
+      updateStatsPage();
     }
 
     function getStatusClass(status) {
-      switch(status) {
-        case 'Completed': return 'bg-emerald-100 text-emerald-700';
-        case 'Watching': return 'bg-blue-100 text-blue-700';
-        case 'Dropped': return 'bg-red-100 text-red-700';
-        default: return 'bg-amber-100 text-amber-700';
-      }
+      const map = { Completed: 'status-completed', Watching: 'status-watching', Dropped: 'status-dropped' };
+      return map[status] || 'status-plan';
     }
 
     function calculateProgress(anime) {
-      if (!anime.totalEpisodes) return { percent: 100, text: anime.episodesWatched + " eps" };
+      if (!anime.totalEpisodes) return { percent: anime.episodesWatched > 0 ? 50 : 0, text: anime.episodesWatched + ' eps' };
       const percent = Math.min(Math.round((anime.episodesWatched / anime.totalEpisodes) * 100), 100);
       return { percent, text: `${anime.episodesWatched}/${anime.totalEpisodes}` };
     }
 
-    function renderAll(filtered = animeList) {
-      renderMobileCards(filtered);
-      renderDesktopTable(filtered);
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
     }
 
-    // Render functions (same as before, compact)
-    function renderMobileCards(filtered) {
-      const container = document.getElementById('mobileView');
-      container.innerHTML = '';
+    function sortAnimeList(list, sortOption) {
+      const pinned = list.filter(a => a.pinned);
+      const unpinned = list.filter(a => !a.pinned);
+      const sortFn = (a, b) => {
+        switch (sortOption) {
+          case 'name-asc': return a.animeName.localeCompare(b.animeName);
+          case 'name-desc': return b.animeName.localeCompare(a.animeName);
+          case 'rating-desc': return (b.rating || 0) - (a.rating || 0);
+          case 'rating-asc': return (a.rating || 0) - (b.rating || 0);
+          case 'progress-desc': {
+            const pA = a.totalEpisodes ? a.episodesWatched / a.totalEpisodes : 0;
+            const pB = b.totalEpisodes ? b.episodesWatched / b.totalEpisodes : 0;
+            return pB - pA;
+          }
+          case 'updated-desc': return new Date(b.lastUpdated || 0) - new Date(a.lastUpdated || 0);
+          default: return 0;
+        }
+      };
+      pinned.sort(sortFn);
+      unpinned.sort(sortFn);
+      return [...pinned, ...unpinned];
+    }
 
-      filtered.forEach(anime => {
-        const prog = calculateProgress(anime);
-        container.innerHTML += `
-          <div class="card glass rounded-3xl p-4 cursor-pointer" onclick="showDetails('${anime.id}')">
-            <div class="flex gap-4">
-              <div class="flex-1">
-                <p class="font-semibold text-base">${anime.animeName}</p>
-                <p class="text-violet-600 text-sm">${anime.season || '—'}</p>
-                <div class="mt-3 flex justify-between text-sm">
-                  <span>${prog.text}</span>
-                  <span class="text-amber-500">${anime.rating ? `⭐ ${anime.rating}` : ''}</span>
-                </div>
-                <div class="progress-container mt-2">
-                  <div class="progress-bar" style="width: ${prog.percent}%"></div>
-                </div>
+    function canIncrement(anime) {
+      if (anime.status !== 'Watching') return false;
+      if (!anime.totalEpisodes) return true;
+      return anime.episodesWatched < anime.totalEpisodes;
+    }
+
+    function buildCardInner(anime, showActions, isGrid) {
+      const prog = calculateProgress(anime);
+      const id = escapeHtml(anime.id);
+      const name = escapeHtml(anime.animeName);
+      const season = escapeHtml(anime.season || '—');
+      const status = escapeHtml(anime.status);
+      const statusCls = getStatusClass(anime.status);
+      const posterName = escapeHtml(anime.animeName);
+      const malId = anime.malId || '';
+      const posterUrl = anime.posterUrl ? escapeHtml(anime.posterUrl) : '';
+      const pinnedCls = anime.pinned ? 'pinned' : '';
+      const pinCls = anime.pinned ? 'text-accent' : 'text-muted-theme';
+      const rating = anime.rating ? `<span class="text-accent font-bold text-xs"><i class="fas fa-star text-[9px]"></i> ${anime.rating}</span>` : '';
+
+      const epPlus = canIncrement(anime) ? `
+        <button onclick="incrementEpisode('${id}'); event.stopPropagation()" class="btn-ep-plus" title="+1 episode">+1</button>` : '';
+
+      const actions = showActions ? `
+        <div class="flex gap-1 items-center" onclick="event.stopPropagation()">
+          <button onclick="togglePin('${id}'); event.stopPropagation()" class="icon-btn glass-light ${pinCls}" title="${anime.pinned ? 'Unpin' : 'Pin'}">
+            <i class="fas fa-thumbtack text-[10px]"></i>
+          </button>
+          ${epPlus}
+          <button onclick="editAnime('${id}')" class="icon-btn glass-light text-accent"><i class="fas fa-pen text-[10px]"></i></button>
+          <button onclick="deleteAnime('${id}')" class="icon-btn glass-light text-red-400/70"><i class="fas fa-trash text-[10px]"></i></button>
+        </div>` : epPlus ? `<div onclick="event.stopPropagation()">${epPlus}</div>` : '';
+
+      const posterSlot = `<div class="card-poster-slot ${isGrid ? 'grid-poster-slot' : ''}" data-poster-name="${posterName}" data-mal-id="${malId}" data-poster-url="${posterUrl}">
+        <div class="card-poster-skeleton"><i class="fas fa-film"></i></div>
+        <img class="card-poster" alt="">
+      </div>`;
+
+      if (isGrid) {
+        return `
+          <div class="anime-card rounded-2xl p-3 cursor-pointer ${pinnedCls}" onclick="showDetails('${id}')">
+            ${posterSlot}
+            <div class="card-body-text">
+              <p class="font-semibold text-sm truncate leading-tight">${name}</p>
+              <p class="text-muted-theme text-[10px] mt-0.5 truncate">${season}</p>
+              <div class="mt-2 flex items-center justify-between">
+                <span class="text-[10px] font-mono text-slate-400">${prog.text}</span>
+                ${rating}
+              </div>
+              <div class="progress-container mt-1.5"><div class="progress-bar" style="width:${prog.percent}%"></div></div>
+              <div class="mt-2 flex items-center justify-between gap-1">
+                <span class="status-pill px-2 py-0.5 rounded-full ${statusCls}">${status}</span>
+                ${actions}
               </div>
             </div>
-            <span class="mt-4 inline-block px-4 py-1 text-xs rounded-2xl ${getStatusClass(anime.status)}">${anime.status}</span>
-          </div>
-        `;
-      });
+          </div>`;
+      }
 
-      if (filtered.length === 0) container.innerHTML = `<p class="text-center text-slate-500 py-12">No anime found</p>`;
-    }
-
-    function renderDesktopTable(filtered) {
-      const tbody = document.getElementById('animeList');
-      tbody.innerHTML = '';
-
-      filtered.forEach(anime => {
-        const prog = calculateProgress(anime);
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50 cursor-pointer" onclick="showDetails('${anime.id}')">
-            <td class="p-4 font-medium">${anime.animeName}</td>
-            <td class="p-4 text-slate-600">${anime.season || '—'}</td>
-            <td class="p-4">
-              <div class="flex items-center gap-2">
-                <div class="flex-1 progress-container">
-                  <div class="progress-bar" style="width: ${prog.percent}%"></div>
-                </div>
-                <span class="text-xs font-mono">${prog.text}</span>
+      return `
+        <div class="anime-card rounded-2xl p-3 cursor-pointer flex gap-3 ${pinnedCls}" onclick="showDetails('${id}')">
+          ${posterSlot}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-[15px] truncate leading-tight">${anime.pinned ? '<i class="fas fa-thumbtack text-accent text-[10px] mr-1"></i>' : ''}${name}</p>
+                <p class="text-muted-theme text-xs mt-0.5">${season}</p>
               </div>
-            </td>
-            <td class="p-4">${anime.rating ? `⭐ ${anime.rating}` : '—'}</td>
-            <td class="p-4"><span class="px-4 py-1 text-xs rounded-2xl ${getStatusClass(anime.status)}">${anime.status}</span></td>
-            <td class="p-4 text-center" onclick="event.stopImmediatePropagation()">
-              <button onclick="editAnime('${anime.id}');event.stopImmediatePropagation()" class="text-violet-600"><i class="fas fa-edit"></i></button>
-              <button onclick="deleteAnime('${anime.id}');event.stopImmediatePropagation()" class="text-red-500 ml-3"><i class="fas fa-trash"></i></button>
-            </td>
-          </tr>
-        `;
+              ${actions}
+            </div>
+            <div class="mt-2 flex items-center justify-between text-xs text-slate-400">
+              <span class="font-mono">${prog.text}</span>${rating}
+            </div>
+            <div class="progress-container mt-1.5"><div class="progress-bar" style="width:${prog.percent}%"></div></div>
+            <span class="status-pill mt-2 inline-block px-3 py-1 rounded-full ${statusCls}">${status}</span>
+          </div>
+        </div>`;
+    }
+
+    function wrapSwipeCard(innerHtml, id) {
+      return `
+        <div class="swipe-card-wrapper" data-swipe-id="${escapeHtml(id)}">
+          <div class="swipe-delete-bg"><i class="fas fa-trash"></i> Delete</div>
+          <div class="swipe-card-content">${innerHtml}</div>
+        </div>`;
+    }
+
+    function buildCard(anime, showActions = true, isGrid = false) {
+      const inner = buildCardInner(anime, showActions, isGrid);
+      return isGrid ? inner : wrapSwipeCard(inner, anime.id);
+    }
+
+    function renderIntoContainer(containerId, items, showActions, emptyIcon, emptyTitle, emptySub) {
+      const container = document.getElementById(containerId);
+      const isGrid = viewMode === 'grid' && (containerId === 'allList' || containerId === 'completedList');
+
+      container.className = isGrid ? 'anime-grid' : 'anime-list';
+
+      if (items.length === 0) {
+        container.innerHTML = `<div class="empty-state glass rounded-2xl col-span-full">
+          <i class="fas ${emptyIcon}" style="font-size:48px;opacity:0.4;display:block;margin-bottom:16px;"></i>
+          <p class="font-semibold mb-1">${emptyTitle}</p><p class="text-sm">${emptySub}</p></div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(a => buildCard(a, showActions, isGrid)).join('');
+      if (!isGrid) initSwipeHandlers(container);
+      observePostersInContainer(container);
+    }
+
+    function emptyState(icon, title, subtitle) {
+      return `<div class="empty-state glass rounded-2xl"><i class="fas ${icon}"></i><p class="font-semibold mb-1">${title}</p><p class="text-sm">${subtitle}</p></div>`;
+    }
+
+    function renderAll(filtered) {
+      const countEl = document.getElementById('allCount');
+      if (filtered.length === 0) {
+        document.getElementById('allList').innerHTML = emptyState('fa-film', 'No anime found', animeList.length === 0 ? 'Tap + to add your first anime' : 'Try adjusting filters');
+        document.getElementById('allList').className = 'anime-list';
+        countEl.textContent = '';
+        return;
+      }
+      countEl.textContent = `${filtered.length} anime${filtered.length !== 1 ? 's' : ''}`;
+      renderIntoContainer('allList', filtered, true, 'fa-film', 'No anime found', '');
+    }
+
+    function renderWatchlist() {
+      const watching = sortAnimeList(animeList.filter(a => a.status === 'Watching'), 'updated-desc');
+      const plan = sortAnimeList(animeList.filter(a => a.status === 'Plan to Watch'), 'updated-desc');
+      const wlContainer = document.getElementById('watchingList');
+      const plContainer = document.getElementById('planList');
+
+      wlContainer.className = 'anime-list';
+      plContainer.className = 'anime-list';
+
+      wlContainer.innerHTML = watching.length ? watching.map(a => buildCard(a, false)).join('') : emptyState('fa-play', 'Nothing watching', 'Add anime with Watching status');
+      plContainer.innerHTML = plan.length ? plan.map(a => buildCard(a, false)).join('') : emptyState('fa-clock', 'Nothing planned', 'Add to plan-to-watch');
+
+      if (watching.length) initSwipeHandlers(wlContainer);
+      if (plan.length) initSwipeHandlers(plContainer);
+      if (currentTab === 'watchlist') observePostersInActiveTab();
+    }
+
+    function renderCompleted() {
+      const completed = sortAnimeList(animeList.filter(a => a.status === 'Completed'), 'rating-desc');
+      document.getElementById('completedSubtitle').textContent = `${completed.length} show${completed.length !== 1 ? 's' : ''} completed`;
+      renderIntoContainer('completedList', completed, false, 'fa-check-double', 'No completed anime', 'Finish a show to see it here');
+    }
+
+    // ─── Swipe to delete ───
+    function initSwipeHandlers(container) {
+      container.querySelectorAll('.swipe-card-wrapper').forEach(wrapper => {
+        const content = wrapper.querySelector('.swipe-card-content');
+        let startX = 0, currentX = 0, swiping = false;
+        const threshold = 80;
+
+        content.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX;
+          currentX = 0;
+          swiping = true;
+          wrapper.classList.add('swiping');
+        }, { passive: true });
+
+        content.addEventListener('touchmove', e => {
+          if (!swiping) return;
+          const dx = e.touches[0].clientX - startX;
+          if (dx > 0) return;
+          currentX = dx;
+          content.style.transform = `translateX(${dx}px)`;
+        }, { passive: true });
+
+        content.addEventListener('touchend', () => {
+          swiping = false;
+          wrapper.classList.remove('swiping');
+          if (currentX < -threshold) {
+            const id = wrapper.dataset.swipeId;
+            content.style.transform = 'translateX(-100%)';
+            setTimeout(() => deleteAnime(id, true), 200);
+          } else {
+            content.style.transform = '';
+          }
+        });
       });
     }
 
+    // ─── Pin & +1 ───
+    function togglePin(id) {
+      const anime = animeList.find(a => a.id === id);
+      if (!anime) return;
+      anime.pinned = !anime.pinned;
+      anime.lastUpdated = new Date().toISOString();
+      saveData();
+      refreshAll();
+      showToast(anime.pinned ? `"${anime.animeName}" pinned` : `"${anime.animeName}" unpinned`, 'success');
+    }
+
+    function incrementEpisode(id) {
+      const anime = animeList.find(a => a.id === id);
+      if (!anime || !canIncrement(anime)) return;
+      anime.episodesWatched = (anime.episodesWatched || 0) + 1;
+      anime.lastUpdated = new Date().toISOString();
+      if (anime.totalEpisodes && anime.episodesWatched >= anime.totalEpisodes) {
+        anime.episodesWatched = anime.totalEpisodes;
+        anime.status = 'Completed';
+        showToast(`"${anime.animeName}" completed!`, 'success');
+      } else {
+        showToast(`Episode ${anime.episodesWatched} logged`, 'success', { duration: 2000 });
+      }
+      saveData();
+      refreshAll();
+    }
+
+    // ─── Filter (debounced) ───
+    function filterTable() {
+      const search = document.getElementById('searchInput').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const sortOption = document.getElementById('sortFilter').value;
+
+      let filtered = animeList.filter(anime => {
+        const matchSearch = anime.animeName.toLowerCase().includes(search) ||
+          (anime.season && anime.season.toLowerCase().includes(search));
+        const matchStatus = !statusFilter || anime.status === statusFilter;
+        return matchSearch && matchStatus;
+      });
+
+      renderAll(sortAnimeList(filtered, sortOption));
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(filterTable, 300);
+    });
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    document.getElementById('sortFilter').addEventListener('change', filterTable);
+
+    // ─── Delete with undo ───
+    function deleteAnime(id, fromSwipe = false) {
+      const index = animeList.findIndex(a => a.id === id);
+      if (index === -1) return;
+
+      const removed = animeList.splice(index, 1)[0];
+      saveData();
+      refreshAll();
+
+      if (pendingDelete?.timeout) clearTimeout(pendingDelete.timeout);
+
+      pendingDelete = {
+        anime: removed,
+        index,
+        timeout: setTimeout(() => { pendingDelete = null; }, 5000)
+      };
+
+      showToast(`"${removed.animeName}" removed`, 'info', {
+        duration: 5000,
+        action: { label: 'Undo', onClick: undoDelete }
+      });
+    }
+
+    function undoDelete() {
+      if (!pendingDelete) return;
+      clearTimeout(pendingDelete.timeout);
+      animeList.splice(pendingDelete.index, 0, pendingDelete.anime);
+      pendingDelete = null;
+      saveData();
+      refreshAll();
+      showToast('Anime restored', 'success');
+    }
+
+    // ─── Stats ───
+    function updateStatsPage() {
+      const total = animeList.length;
+      const completed = animeList.filter(a => a.status === 'Completed').length;
+      const watching = animeList.filter(a => a.status === 'Watching').length;
+      const plan = animeList.filter(a => a.status === 'Plan to Watch').length;
+      const dropped = animeList.filter(a => a.status === 'Dropped').length;
+      const rated = animeList.filter(a => a.rating > 0);
+      const avgRating = rated.length > 0 ? (rated.reduce((s, a) => s + a.rating, 0) / rated.length).toFixed(1) : '—';
+
+      document.getElementById('statsOverview').innerHTML = `
+        <div class="glass p-4 text-center"><p class="stat-label mb-1">Total</p><p class="text-3xl font-black">${total}</p></div>
+        <div class="glass p-4 text-center"><p class="stat-label mb-1">Completed</p><p class="text-3xl font-black stat-value-orange">${completed}</p></div>
+        <div class="glass p-4 text-center"><p class="stat-label mb-1">Watching</p><p class="text-3xl font-black stat-value-orange">${watching}</p></div>
+        <div class="glass p-4 text-center"><p class="stat-label mb-1">Avg Rating</p><p class="text-3xl font-black stat-value-orange">${avgRating}</p></div>`;
+
+      const maxCount = Math.max(completed, watching, plan, dropped, 1);
+      const bars = [
+        { label: 'Completed', count: completed, color: '#66bb6a' },
+        { label: 'Watching', count: watching, color: '#f47521' },
+        { label: 'Plan', count: plan, color: '#a0a0a0' },
+        { label: 'Dropped', count: dropped, color: '#ef5350' },
+      ];
+      document.getElementById('statusChart').innerHTML = total === 0 ? '<p class="text-sm text-slate-500 text-center py-4">Add anime to see breakdown</p>'
+        : bars.map(b => `<div class="bar-chart-row"><span class="bar-chart-label">${b.label}</span><div class="bar-chart-track"><div class="bar-chart-fill" style="width:${(b.count/maxCount)*100}%;background:${b.color}"></div></div><span class="bar-chart-value" style="color:${b.color}">${b.count}</span></div>`).join('');
+
+      const totalWatched = animeList.reduce((s, a) => s + (a.episodesWatched || 0), 0);
+      const totalEps = animeList.reduce((s, a) => s + (a.totalEpisodes || 0), 0);
+      const epPercent = totalEps > 0 ? Math.round((totalWatched / totalEps) * 100) : 0;
+      const circ = 2 * Math.PI * 52;
+
+      document.getElementById('episodeStats').innerHTML = total === 0 ? '<p class="text-sm text-slate-500">No episode data yet</p>' : `
+        <div class="stat-ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle cx="60" cy="60" r="52" fill="none" stroke="#f47521" stroke-width="8" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ-(epPercent/100)*circ}" style="transform:rotate(-90deg);transform-origin:center"/></svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span class="text-2xl font-bold">${epPercent}%</span><span class="text-[10px] text-slate-500 uppercase">Complete</span></div></div>
+        <div><p class="text-3xl font-bold">${totalWatched}</p><p class="text-xs text-slate-500 uppercase">Episodes Watched</p><p class="text-sm text-slate-400 mt-2">of ${totalEps} total</p></div>`;
+
+      const topRated = [...animeList].filter(a => a.rating > 0).sort((a, b) => b.rating - a.rating).slice(0, 5);
+      document.getElementById('topRated').innerHTML = topRated.length === 0 ? '<p class="text-sm text-slate-500 text-center py-2">Rate your anime to see rankings</p>'
+        : topRated.map((a, i) => `<div class="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer" onclick="showDetails('${escapeHtml(a.id)}')"><span class="w-6 h-6 rounded bg-accent-subtle text-accent text-xs font-black flex items-center justify-center" style="background:var(--accent-subtle)">${i+1}</span><span class="flex-1 truncate text-sm font-bold">${escapeHtml(a.animeName)}</span><span class="text-accent font-bold text-sm"><i class="fas fa-star text-[10px]"></i> ${a.rating}</span></div>`).join('');
+    }
+
+    // ─── Modals ───
     async function showDetails(id) {
       const anime = animeList.find(a => a.id === id);
       if (!anime) return;
@@ -330,78 +1490,34 @@
 
       document.getElementById('detailName').textContent = anime.animeName;
       document.getElementById('detailSeason').textContent = anime.season || '—';
-      
       const prog = calculateProgress(anime);
       document.getElementById('detailProgress').textContent = prog.text;
       document.getElementById('detailProgressBar').style.width = prog.percent + '%';
-      
-      document.getElementById('detailRating').innerHTML = anime.rating ? `⭐ ${anime.rating}/10` : '—';
+      document.getElementById('detailRating').innerHTML = anime.rating ? `<i class="fas fa-star text-accent"></i> ${anime.rating}<span class="text-lg text-muted-theme">/10</span>` : '—';
       document.getElementById('detailNotes').textContent = anime.notes || 'No notes added.';
-
       const statusEl = document.getElementById('detailStatus');
       statusEl.textContent = anime.status;
-      statusEl.className = `inline-block px-4 py-1 text-xs rounded-full ${getStatusClass(anime.status)}`;
+      statusEl.className = `status-pill inline-block px-3 py-1 rounded-full ${getStatusClass(anime.status)}`;
 
-      // Loading
       document.getElementById('loadingSpinner').classList.remove('hidden');
       document.getElementById('detailImage').classList.add('hidden');
-
-      const imageUrl = await fetchAnimeImage(anime.animeName);
-      const img = document.getElementById('detailImage');
-      
+      const imageUrl = await getPosterUrl(anime);
       document.getElementById('loadingSpinner').classList.add('hidden');
-      img.src = imageUrl || 'https://via.placeholder.com/600x400?text=No+Image+Found';
+      const img = document.getElementById('detailImage');
+      img.src = imageUrl || 'https://via.placeholder.com/600x400/141414/f47521?text=No+Image';
       img.classList.remove('hidden');
-
       document.getElementById('detailsModal').classList.remove('hidden');
     }
 
-    function closeDetailsModal() {
-      document.getElementById('detailsModal').classList.add('hidden');
-    }
+    function closeDetailsModal() { document.getElementById('detailsModal').classList.add('hidden'); }
+    function editFromDetails() { closeDetailsModal(); if (currentDetailId) editAnime(currentDetailId); }
+    function deleteFromDetails() { if (currentDetailId) { const id = currentDetailId; closeDetailsModal(); deleteAnime(id); } }
 
-    function editFromDetails() {
-      closeDetailsModal();
-      if (currentDetailId) editAnime(currentDetailId);
-    }
-
-    // Sort + Filter Logic
-    function filterTable() {
-      const search = document.getElementById('searchInput').value.toLowerCase().trim();
-      const statusFilter = document.getElementById('statusFilter').value;
-      const sortOption = document.getElementById('sortFilter').value;
-
-      let filtered = animeList.filter(anime => {
-        const matchSearch = anime.animeName.toLowerCase().includes(search) || 
-                           (anime.season && anime.season.toLowerCase().includes(search));
-        const matchStatus = !statusFilter || anime.status === statusFilter;
-        return matchSearch && matchStatus;
-      });
-
-      // Apply Sorting
-      filtered.sort((a, b) => {
-        switch(sortOption) {
-          case 'name-asc': return a.animeName.localeCompare(b.animeName);
-          case 'name-desc': return b.animeName.localeCompare(a.animeName);
-          case 'rating-desc': return (b.rating || 0) - (a.rating || 0);
-          case 'rating-asc': return (a.rating || 0) - (b.rating || 0);
-          case 'progress-desc':
-            const progA = a.totalEpisodes ? a.episodesWatched / a.totalEpisodes : 0;
-            const progB = b.totalEpisodes ? b.episodesWatched / b.totalEpisodes : 0;
-            return progB - progA;
-          case 'updated-desc':
-            return new Date(b.lastUpdated || 0) - new Date(a.lastUpdated || 0);
-          default: return 0;
-        }
-      });
-
-      renderAll(filtered);
-    }
-
-    // Other functions (showAddModal, saveAnime, editAnime, deleteAnime, export etc.) are same as previous version
     function showAddModal() {
       document.getElementById('modalTitle').textContent = 'Add New Anime';
       document.getElementById('editId').value = '';
+      document.getElementById('malId').value = '';
+      document.getElementById('posterUrl').value = '';
       document.getElementById('animeName').value = '';
       document.getElementById('season').value = '';
       document.getElementById('epWatched').value = '0';
@@ -409,18 +1525,21 @@
       document.getElementById('rating').value = '0';
       document.getElementById('status').value = 'Watching';
       document.getElementById('notes').value = '';
+      document.getElementById('autocompleteDropdown').classList.add('hidden');
       document.getElementById('modal').classList.remove('hidden');
     }
 
-    function closeModal() {
-      document.getElementById('modal').classList.add('hidden');
-    }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
     function saveAnime() {
       const id = document.getElementById('editId').value;
       const animeName = document.getElementById('animeName').value.trim();
-      if (!animeName) return alert("Anime name is required!");
+      if (!animeName) return showToast('Anime name is required', 'error');
 
+      const duplicate = animeList.find(a => a.animeName.toLowerCase() === animeName.toLowerCase() && a.id !== id);
+      if (duplicate) return showToast('This anime is already in your list', 'error');
+
+      const existing = id ? animeList.find(a => a.id === id) : null;
       const anime = {
         id: id || Date.now().toString(),
         animeName,
@@ -430,20 +1549,26 @@
         rating: parseFloat(document.getElementById('rating').value) || 0,
         status: document.getElementById('status').value,
         notes: document.getElementById('notes').value.trim(),
+        malId: parseInt(document.getElementById('malId').value) || existing?.malId || null,
+        posterUrl: document.getElementById('posterUrl').value || existing?.posterUrl || null,
+        pinned: existing?.pinned || false,
         lastUpdated: new Date().toISOString()
       };
 
+      if (anime.posterUrl) posterCache.set(animeName, anime.posterUrl);
+
       if (id) {
-        const index = animeList.findIndex(a => a.id === id);
-        if (index !== -1) animeList[index] = anime;
+        const idx = animeList.findIndex(a => a.id === id);
+        if (idx !== -1) animeList[idx] = anime;
+        showToast('Anime updated', 'success');
       } else {
         animeList.push(anime);
+        showToast(`"${animeName}" added`, 'success');
       }
 
       saveData();
       closeModal();
-      renderAll();
-      updateStats();
+      refreshAll();
     }
 
     function editAnime(id) {
@@ -451,6 +1576,8 @@
       if (!anime) return;
       document.getElementById('modalTitle').textContent = 'Edit Anime';
       document.getElementById('editId').value = anime.id;
+      document.getElementById('malId').value = anime.malId || '';
+      document.getElementById('posterUrl').value = anime.posterUrl || '';
       document.getElementById('animeName').value = anime.animeName;
       document.getElementById('season').value = anime.season || '';
       document.getElementById('epWatched').value = anime.episodesWatched;
@@ -461,37 +1588,28 @@
       document.getElementById('modal').classList.remove('hidden');
     }
 
-    function deleteAnime(id) {
-      if (confirm('Delete this anime?')) {
-        animeList = animeList.filter(a => a.id !== id);
-        saveData();
-        renderAll();
-        updateStats();
-      }
-    }
-
     function exportJSON() {
-      if (animeList.length === 0) return alert("Your list is empty!");
-      const dataStr = JSON.stringify(animeList, null, 2);
+      if (animeList.length === 0) return showToast('Your list is empty', 'error');
       const link = document.createElement('a');
-      link.href = 'data:application/json,' + encodeURIComponent(dataStr);
-      link.download = `anime_list_${new Date().toISOString().slice(0,10)}.json`;
+      link.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(animeList, null, 2));
+      link.download = `anime_list_${new Date().toISOString().slice(0, 10)}.json`;
       link.click();
+      showToast('JSON exported', 'success');
     }
 
     function importJSON(event) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         try {
           animeList = JSON.parse(e.target.result);
+          animeList.forEach(a => { if (a.pinned === undefined) a.pinned = false; });
           saveData();
-          renderAll();
-          updateStats();
-          alert("✅ Successfully imported!");
+          refreshAll();
+          showToast('List imported successfully', 'success');
         } catch (err) {
-          alert("❌ Invalid JSON file");
+          showToast('Invalid JSON file', 'error');
         }
       };
       reader.readAsText(file);
@@ -499,21 +1617,28 @@
     }
 
     function exportPDF() {
+      if (animeList.length === 0) return showToast('Your list is empty', 'error');
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      doc.text("My Anime Tracker", 20, 20);
+      doc.setFontSize(18);
+      doc.text('My Anime Tracker', 20, 20);
       let y = 35;
       animeList.forEach(anime => {
         if (y > 270) { doc.addPage(); y = 30; }
-        const prog = calculateProgress(anime);
-        doc.text(anime.animeName, 20, y);
-        doc.text(prog.text, 160, y);
-        y += 12;
+        doc.setFontSize(10);
+        doc.text(`${anime.animeName} — ${anime.status} — ${calculateProgress(anime).text}`, 20, y);
+        y += 10;
       });
-      doc.save("My_Anime_List.pdf");
+      doc.save('My_Anime_List.pdf');
+      showToast('PDF exported', 'success');
     }
 
-    window.onload = loadData;
+    window.addEventListener('load', () => {
+      initTheme();
+      initViewMode();
+      setupAutocomplete();
+      loadData();
+    });
   </script>
 </body>
 </html>
